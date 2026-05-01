@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Il Sistema Tolemaico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: #000;
+      color: #fff;
+      overflow: hidden;
+      user-select: none;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .technical-panel {
+      background-color: rgba(3, 11, 26, 0.85);
+      border: 1px solid rgba(8, 145, 178, 0.4);
+      padding: 0.75rem;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 9px;
+      font-weight: 700;
+      color: #22d3ee;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+    canvas {
+      image-rendering: auto;
+    }
+    .icon {
+      width: 1rem;
+      height: 1rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 2px;
+      background: #0a2638;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 12px;
+      width: 6px;
+      background: #22d3ee;
+      margin-top: -5px;
+      cursor: pointer;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(8, 145, 178, 0.6); }
+  </style>
+</head>
+<body>
+  <div class="relative w-full h-screen overflow-hidden">
+    <canvas id="orrery-canvas" class="block w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+
+    <!-- Header -->
+    <div class="absolute top-6 left-6 pointer-events-none flex flex-col z-10 select-none">
+      <div class="text-[9px] font-bold tracking-[0.2em] text-cyan-700">ANDREA CRISTOFORI</div>
+      <div class="text-[22px] tracking-[0.1em] uppercase mt-0.5">
+        <span class="font-bold text-cyan-400">IL SISTEMA</span> <span class="text-white italic font-light">TOLEMAICO</span>
+      </div>
+    </div>
+
+    <!-- Left UI Sidebar -->
+    <div class="absolute left-6 top-28 bottom-6 w-56 flex flex-col gap-4 z-10 font-mono" id="ui-container">
+      
+      <!-- Oggetti Celesti -->
+      <div class="technical-panel">
+        <div class="panel-header">
+          <svg class="icon w-3 h-3" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          Oggetti Celesti
+        </div>
+        <div id="planets-list" class="space-y-0.5"></div>
+      </div>
+
+      <!-- Visibilità -->
+      <div class="technical-panel">
+        <div class="panel-header">
+          <svg class="icon w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          Visibilità
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 mb-1.5">
+          <button id="toggle-orbits" class="py-1.5 text-[9px] font-bold tracking-wider uppercase transition-colors border bg-transparent text-cyan-500 border-cyan-900/60 hover:border-cyan-500">ORBITE</button>
+          <button id="toggle-traces" class="py-1.5 text-[9px] font-bold tracking-wider uppercase transition-colors border bg-transparent text-cyan-500 border-cyan-900/60 hover:border-cyan-500">TRACCE</button>
+          <button id="toggle-names" class="py-1.5 text-[9px] font-bold tracking-wider uppercase transition-colors border bg-cyan-400 text-black border-cyan-400">NOMI</button>
+          <button id="toggle-stars" class="py-1.5 text-[9px] font-bold tracking-wider uppercase transition-colors border bg-cyan-400 text-black border-cyan-400">STELLE FISSE</button>
+        </div>
+        <div class="flex gap-1.5">
+          <button id="btn-zoomin" class="flex-1 py-1.5 flex justify-center items-center border border-cyan-900/60 hover:border-cyan-500 text-cyan-500 transition-colors bg-[#030b1a]">
+            <svg class="icon w-4 h-4" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button id="btn-zoomout" class="flex-1 py-1.5 flex justify-center items-center border border-cyan-900/60 hover:border-cyan-500 text-cyan-500 transition-colors bg-[#030b1a]">
+            <svg class="icon w-4 h-4" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Temporizzazione -->
+      <div class="technical-panel">
+        <div class="panel-header">
+          <svg class="icon w-3 h-3" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Temporizzazione
+        </div>
+        <div class="flex items-center justify-between gap-4 mt-3 mb-4">
+          <div class="flex items-center gap-3">
+            <button id="btn-playpause" class="text-cyan-500 hover:text-cyan-300 transition-colors">
+              <svg class="icon w-4 h-4 fill-current" viewBox="0 0 24 24" id="play-icon" style="display:none;" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <svg class="icon w-4 h-4 fill-current" viewBox="0 0 24 24" id="pause-icon" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button id="btn-reset" class="text-cyan-500 hover:text-cyan-300 transition-colors">
+              <svg class="icon w-3 h-3" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+          <span id="speed-label" class="text-cyan-500 font-mono text-[9px] font-bold">1.0x</span>
+        </div>
+        <input id="slider-speed" type="range" min="0.1" max="5" step="0.1" value="1" class="w-full mb-1">
+      </div>
+
+      <button id="btn-help" class="mt-2 w-full py-2 bg-cyan-400 text-black font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 hover:bg-cyan-300 transition-colors">
+        <svg class="icon w-3 h-3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Guida
+      </button>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6 backdrop-blur-sm">
+      <div class="bg-[#02050A] w-full max-w-3xl max-h-[85vh] overflow-y-auto relative border border-cyan-900/30">
+        <button id="close-help" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+          <svg class="icon w-4 h-4" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+
+        <div class="p-10 space-y-12">
+          
+          <!-- Claudio Tolomeo -->
+          <div>
+            <h2 class="text-xl font-sans text-white mb-6 border-l-2 border-cyan-500 pl-4">Claudio Tolomeo</h2>
+            <div class="font-mono text-[12px] text-gray-400 leading-relaxed pl-4">
+              <p>Matematico e astronomo del II secolo d.C. La sua opera, l'Almagesto<br>
+              (Syntaxis Mathematica), ha dominato il pensiero astronomico per<br>
+              oltre mille anni, fornendo una descrizione matematica rigorosa del<br>
+              moto dei corpi celesti.</p>
+            </div>
+          </div>
+          
+          <!-- Geometria Tolemaica -->
+          <div>
+            <h2 class="text-xl font-sans text-white mb-6 border-l-2 border-cyan-500 pl-4">Geometria Tolemaica</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-4">
+              <div class="font-mono text-[12px] text-gray-400 leading-relaxed space-y-6">
+                <p>Per conciliare il dogma del<br>
+                moto circolare uniforme con<br>
+                l'evidenza del moto retrogrado,<br>
+                Tolomeo implementò un raffinato<br>
+                sistema di cerchi sovrapposti.</p>
+                <div class="space-y-4">
+                  <div>
+                    <div class="text-cyan-400 font-bold mb-1 flex items-center gap-2"><div class="w-1.5 h-1.5 bg-cyan-400"></div> DEFERENTE</div>
+                    <p class="pl-3.5 opacity-80">Il tragitto orbitale primario che<br>circonda la Terra.</p>
+                  </div>
+                  <div>
+                    <div class="text-cyan-400 font-bold mb-1 flex items-center gap-2"><div class="w-1.5 h-1.5 bg-cyan-400"></div> EPICICLO</div>
+                    <p class="pl-3.5 opacity-80">Un cerchio minore il cui centro trasla<br>lungo il deferente.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Technical Diagram -->
+              <div class="border border-[#111A24] bg-[#040810] flex flex-col relative w-full aspect-square max-w-[280px]">
+                <div class="text-[9px] font-mono text-cyan-800 p-2 absolute top-0 left-0">TECHNICAL_DIAGRAM_01</div>
+                <div class="flex-1 flex items-center justify-center relative w-full h-full mt-4">
+                   <svg width="100%" height="100%" viewBox="0 0 200 200" class="absolute inset-0 m-auto" style="margin-top: 10px;">
+                      <!-- Deferent -->
+                      <circle cx="100" cy="100" r="50" fill="none" stroke="#1A2B3C" stroke-width="1" />
+                      <!-- Earth -->
+                      <circle cx="100" cy="100" r="3" fill="#3B82F6" />
+                      <text x="100" y="85" fill="#3B82F6" font-size="7" font-family="monospace" letter-spacing="1" text-anchor="middle">TERRA</text>
+                      
+                      <!-- Line to center of epicycle -->
+                      <line x1="100" y1="100" x2="150" y2="100" stroke="#1A2B3C" stroke-width="1" stroke-dasharray="2 2" />
+                      
+                      <!-- Center of epicycle -->
+                      <circle cx="150" cy="100" r="2.5" fill="#0ea5e9" />
+                      <!-- Epicycle -->
+                      <circle cx="150" cy="100" r="15" fill="none" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="2 2" />
+                      <text x="150" y="85" fill="#0ea5e9" font-size="7" font-family="monospace" letter-spacing="1" text-anchor="middle">EPICICLO</text>
+                      
+                      <text x="100" y="165" fill="#334455" font-size="7" font-family="monospace" letter-spacing="1" text-anchor="middle">DEFERENTE</text>
+                   </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cinematica Avanzata -->
+          <div>
+            <h2 class="text-xl font-sans text-white mb-6 border-l-2 border-cyan-500 pl-4">Cinematica Avanzata</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4">
+              <div class="bg-[#03070E] border border-[#0A121C] p-4 text-gray-400">
+                <div class="text-cyan-400 font-bold mb-2 font-mono text-[11px] uppercase tracking-wider">Equante</div>
+                <p class="font-mono text-[11px] leading-relaxed">Punto matematico rispetto al quale<br>il centro dell'epiciclo si muove con<br>velocità angolare costante,<br>permettendo al modello di aderire<br>alle osservazioni retrogrado.</p>
+              </div>
+              <div class="bg-[#03070E] border border-[#0A121C] p-4 text-gray-400">
+                <div class="text-cyan-400 font-bold mb-2 font-mono text-[11px] uppercase tracking-wider">Eccentrico</div>
+                <p class="font-mono text-[11px] leading-relaxed">Configurazione in cui il centro del<br>deferente non coincide con la<br>posizione della Terra, spiegando<br>così le diverse distanze e<br>velocità apparenti dei pianeti.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // System Constants
+    const PLANETS = {
+      luna:     { id: 'luna',     name: "Luna",     def: 30,  epi: 2.6,   p_def: 27,    p_epi: 26,   color: "#FFFFFF", ex: -5,  ey: -3 },
+      mercurio: { id: 'mercurio', name: "Mercurio", def: 60,  epi: 22.5,  p_def: 365,   p_epi: 88,   color: "#55FFFF", ex: 0,   ey: 6 },
+      venere:   { id: 'venere',   name: "Venere",   def: 80,  epi: 57.5,  p_def: 365,   p_epi: 224,  color: "#55FF55", ex: 6,   ey: -3 },
+      sole:     { id: 'sole',     name: "Sole",     def: 100, epi: 0,     p_def: 365,   p_epi: 1,    color: "#FFFF00", ex: 5,   ey: 2 },
+      marte:    { id: 'marte',    name: "Marte",    def: 123, epi: 81,    p_def: 668,   p_epi: 365,  color: "#FF5555", ex: -12, ey: -3 },
+      giove:    { id: 'giove',    name: "Giove",    def: 170, epi: 32.5,  p_def: 4332,  p_epi: 365,  color: "#55FF55", ex: -4,  ey: 2 },
+      saturno:  { id: 'saturno',  name: "Saturno",  def: 195, epi: 21,    p_def: 10760, p_epi: 365,  color: "#00AAAA", ex: 3,   ey: 7 }
+    };
+
+    // State 
+    let zoom = 2.0;
+    let showOrbits = true;
+    let showTraces = false;
+    let showNames = true;
+    let showStarsSphere = true;
+    let isPaused = false;
+    let speed = 1.0;
+    
+    let visiblePlanets = { luna: false, sole: true, mercurio: false, venere: true, marte: true, giove: false, saturno: false };
+    let angles = { luna: -Math.PI, mercurio: 0, venere: 0, sole: 0, marte: Math.PI, giove: 0, saturno: 0 };
+    let anglesEpi = { luna: 0, mercurio: 0, venere: 0, sole: 0, marte: 0, giove: 0, saturno: 0 };
+    let traces = { luna: [], mercurio: [], venere: [], sole: [], marte: [], giove: [], saturno: [] };
+    let starsRotation = 0;
+
+    // Generate Background
+    const stars = Array.from({ length: 2000 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const spread = (Math.random() < 0.8) 
+        ? (Math.random() * 4 - 2) // Dense inner band
+        : (Math.random() * 16 - 8);  // Scattered outer band
+      return {
+        angle: angle,
+        r: 250 + spread, // Base radius of the fixed stars sphere
+        opacity: Math.random() * 0.6 + 0.2
+      };
+    });
+
+    // Setup Canvas
+    const canvas = document.getElementById('orrery-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Setup Planet Buttons
+    const planetsListEl = document.getElementById('planets-list');
+    Object.values(PLANETS).forEach(planet => {
+      const btn = document.createElement('button');
+      
+      const updateClass = () => {
+        const isOpt = visiblePlanets[planet.id];
+        btn.className = `w-full flex items-center px-2 py-1.5 text-[10px] font-bold transition-all mb-0.5 ${
+          isOpt ? "bg-[#061e30]" : "bg-transparent hover:bg-cyan-900/20"
+        }`;
+        
+        if (isOpt) {
+          btn.style.border = `1px solid rgba(8, 145, 178, 0.4)`;
+          btn.style.color = planet.color;
+        } else {
+          btn.style.border = `1px solid transparent`;
+          btn.style.color = '#567a92';
+        }
+
+        btn.innerHTML = `
+          <div class="w-1.5 h-1.5 mr-2.5" style="background-color: ${isOpt ? planet.color : '#567a92'}"></div>
+          <span class="uppercase tracking-widest">${planet.name}</span>
+        `;
+      };
+
+      btn.onclick = () => {
+        visiblePlanets[planet.id] = !visiblePlanets[planet.id];
+        updateClass();
+      };
+      
+      updateClass();
+      planetsListEl.appendChild(btn);
+    });
+
+    // Control Handlers
+    function updateToggleButton(id, state) {
+      const btn = document.getElementById(`toggle-${id}`);
+      btn.className = `py-1.5 text-[9px] font-bold tracking-wider uppercase transition-colors border ${
+        state ? "bg-cyan-400 text-black border-cyan-400" : "bg-transparent text-cyan-500 border-cyan-900/60 hover:border-cyan-500"
+      }`;
+    }
+
+    // Initialize toggle buttons
+    updateToggleButton('orbits', showOrbits);
+    updateToggleButton('traces', showTraces);
+    updateToggleButton('names', showNames);
+    updateToggleButton('stars', showStarsSphere);
+
+    document.getElementById('toggle-orbits').onclick = () => { showOrbits = !showOrbits; updateToggleButton('orbits', showOrbits); };
+    document.getElementById('toggle-traces').onclick = () => { showTraces = !showTraces; updateToggleButton('traces', showTraces); };
+    document.getElementById('toggle-names').onclick = () => { showNames = !showNames; updateToggleButton('names', showNames); };
+    document.getElementById('toggle-stars').onclick = () => { showStarsSphere = !showStarsSphere; updateToggleButton('stars', showStarsSphere); };
+
+    document.getElementById('btn-zoomin').onclick = () => { zoom = Math.min(zoom * 1.2, 10); };
+    document.getElementById('btn-zoomout').onclick = () => { zoom = Math.max(zoom / 1.2, 0.5); };
+
+    document.getElementById('btn-playpause').onclick = () => {
+      isPaused = !isPaused;
+      document.getElementById('play-icon').style.display = isPaused ? 'block' : 'none';
+      document.getElementById('pause-icon').style.display = isPaused ? 'none' : 'block';
+    };
+
+    document.getElementById('btn-reset').onclick = () => {
+      angles = { luna: 0, mercurio: 0, venere: 0, sole: 0, marte: 0, giove: 0, saturno: 0 };
+      anglesEpi = { luna: 0, mercurio: 0, venere: 0, sole: 0, marte: 0, giove: 0, saturno: 0 };
+      traces = { luna: [], mercurio: [], venere: [], sole: [], marte: [], giove: [], saturno: [] };
+    };
+
+    document.getElementById('slider-speed').oninput = (e) => {
+      speed = parseFloat(e.target.value);
+      document.getElementById('speed-label').textContent = speed.toFixed(1) + 'x';
+    };
+
+    document.getElementById('btn-help').onclick = () => { document.getElementById('help-modal').classList.remove('hidden'); };
+    document.getElementById('close-help').onclick = () => { document.getElementById('help-modal').classList.add('hidden'); };
+
+    // Canvas panning state
+    let drag = false;
+    let cxOffset = 0;
+    let cyOffset = 0;
+    let mx = 0, my = 0;
+
+    canvas.addEventListener('mousedown', (e) => { drag = true; mx = e.clientX; my = e.clientY; });
+    canvas.addEventListener('mousemove', (e) => {
+      if(drag) {
+        cxOffset += e.clientX - mx;
+        cyOffset += e.clientY - my;
+        mx = e.clientX; my = e.clientY;
+      }
+    });
+    canvas.addEventListener('mouseup', () => drag = false);
+    canvas.addEventListener('mouseleave', () => drag = false);
+
+    // Render loop
+    function render() {
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, width, height);
+
+      const midX = width / 2 + cxOffset;
+      const midY = height / 2 + cyOffset;
+
+      const dt = isPaused ? 0 : speed * 0.5;
+      if (!isPaused) {
+        starsRotation += 0.001 * dt;
+      }
+
+      if (showStarsSphere) {
+        const sphereRadius = 250 * zoom;
+
+        ctx.beginPath();
+        ctx.arc(midX, midY, sphereRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(0, 180, 255, 0.15)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = "#00E5FF";
+        stars.forEach((star) => {
+          const angle = star.angle + starsRotation;
+          const r = star.r * zoom;
+          const x = midX + Math.cos(angle) * r;
+          const y = midY + Math.sin(angle) * r;
+          ctx.globalAlpha = star.opacity;
+          ctx.fillRect(x, y, zoom > 1 ? 1.5 : 1, zoom > 1 ? 1.5 : 1);
+        });
+        
+        ctx.globalAlpha = 1.0;
+
+        if (showNames) {
+          ctx.font = `bold ${5 * zoom}px 'JetBrains Mono'`;
+          ctx.fillStyle = "#0088AA";
+          ctx.textAlign = "center";
+          ctx.fillText("SFERA DELLE STELLE FISSE", midX, midY - sphereRadius - 8 * zoom);
+          ctx.textAlign = "left";
+        }
+      }
+
+      ctx.beginPath();
+      ctx.arc(midX, midY, 5 * zoom, 0, Math.PI * 2);
+      ctx.fillStyle = "#5555FF";
+      ctx.fill();
+      if (showNames) {
+        ctx.font = `bold ${5 * zoom}px 'JetBrains Mono'`;
+        ctx.fillStyle = "#5555FF";
+        ctx.textAlign = "center";
+        ctx.fillText("TERRA", midX, midY + 13 * zoom);
+        ctx.textAlign = "left";
+      }
+
+      Object.entries(PLANETS).forEach(([id, d]) => {
+        if (!isPaused) {
+          angles[id] -= (2 * Math.PI / d.p_def) * dt;
+          if (["marte", "giove", "saturno"].includes(id)) {
+            anglesEpi[id] = angles["sole"];
+          } else if (["mercurio", "venere"].includes(id)) {
+            angles[id] = angles["sole"];
+            anglesEpi[id] -= (2 * Math.PI / d.p_epi) * dt;
+          } else if (id === "luna") {
+            anglesEpi[id] += (2 * Math.PI / d.p_epi) * dt;
+          }
+        }
+
+        const angle = angles[id];
+        const angleEpi = anglesEpi[id];
+
+        const cx = midX + d.ex * zoom;
+        const cy = midY + d.ey * zoom;
+        const ex = cx + Math.cos(angle) * d.def * zoom;
+        const ey = cy + Math.sin(angle) * d.def * zoom;
+        const fx = ex + Math.cos(angleEpi) * d.epi * zoom;
+        const fy = ey + Math.sin(angleEpi) * d.epi * zoom;
+
+        if (visiblePlanets[id]) {
+          if (showTraces && !isPaused) {
+            traces[id].push({ x: fx - cxOffset, y: fy - cyOffset });
+            if (traces[id].length > 100) traces[id].shift();
+          }
+          if (showTraces) {
+            ctx.beginPath();
+            ctx.strokeStyle = d.color;
+            ctx.lineWidth = 1;
+            traces[id].forEach((p, i) => {
+              if (i === 0) ctx.moveTo(p.x + cxOffset, p.y + cyOffset);
+              else ctx.lineTo(p.x + cxOffset, p.y + cyOffset);
+            });
+            ctx.stroke();
+          }
+          if (showOrbits) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, d.def * zoom, 0, Math.PI * 2);
+            ctx.strokeStyle = d.color + "44";
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(ex, ey);
+            ctx.strokeStyle = d.color + "33";
+            ctx.stroke();
+
+            if (d.epi > 0) {
+              ctx.beginPath();
+              ctx.arc(ex, ey, d.epi * zoom, 0, Math.PI * 2);
+              ctx.strokeStyle = d.color + "66";
+              ctx.stroke();
+
+              ctx.beginPath();
+              ctx.moveTo(ex, ey);
+              ctx.lineTo(fx, fy);
+              ctx.strokeStyle = d.color + "44";
+              ctx.stroke();
+            }
+
+            ctx.strokeStyle = d.color + "88";
+            ctx.beginPath();
+            ctx.moveTo(cx - 3, cy); ctx.lineTo(cx + 3, cy);
+            ctx.moveTo(cx, cy - 3); ctx.lineTo(cx, cy + 3);
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.arc(fx, fy, 2 * zoom + 2, 0, Math.PI * 2);
+          ctx.fillStyle = d.color;
+          ctx.fill();
+
+          if (showNames) {
+            ctx.font = `bold ${5 * zoom}px 'JetBrains Mono'`;
+            ctx.fillStyle = d.color;
+            ctx.fillText(d.name.toUpperCase(), fx + 6 * zoom, fy + 2 * zoom);
+          }
+        }
+      });
+
+      requestAnimationFrame(render);
+    }
+    render();
+  </script>
+</body>
+</html>

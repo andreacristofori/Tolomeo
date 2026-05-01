@@ -1,0 +1,6 @@
+{
+  "name": "Il Sistema Tolemaico",
+  "description": "Una simulazione interattiva del modello geocentrico di Claudio Tolomeo, basata sui parametri storici originali e dotata di visualizzazione di epicicli e deferenti.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
